@@ -1,8 +1,15 @@
+const bodyParser = require("body-parser");
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs"); // This tells the Express app to use EJS as its templating engine. 
+app.use(bodyParser.urlencoded({extended: true}));
+
+function generateRandomString() {
+
+}
+
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca", // shortURL is the key, b2xVn2; long is the value. 
@@ -18,7 +25,11 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);       // ejs default folder view, 
 });
 
-app.get("/urls/:shortURL", (req, res) => {
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
+app.get("/urls/:shortURL", (req, res) => {      // : means shortURL is a variable to be replaced. 
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] /* What goes here? */ };
   res.render("urls_show", templateVars); // the way to pass the variable to ejs file. 
 });
@@ -30,6 +41,14 @@ app.get("/urls.json", (req, res) => {
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
+
+app.post("/urls", (req, res) => {
+  console.log(req.body);  // Log the POST request body to the console
+  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+});
+
+
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
