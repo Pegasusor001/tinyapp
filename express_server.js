@@ -36,7 +36,6 @@ app.post("/urls", (req, res) => {
 // when receive request to different short url, ejs: urls_show
 app.get("/urls/:shortURL", (req, res) => {     
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
-  console.log(req.params);
   res.render("urls_show", templateVars);
 });
 
@@ -59,6 +58,13 @@ app.post('/urls/:url/delete', (req, res) => {
   delete urlDatabase[urlToDelte];
 
   res.redirect('/urls')
+})
+
+// Edit urls 
+app.post('/urls/:url/edit', (req, res) => {
+  const urlToEdit = req.params.url;
+  urlDatabase[urlToEdit] = req.body.longURL;
+  res.redirect('/urls');
 })
 
 
