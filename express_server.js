@@ -7,7 +7,13 @@ app.set("view engine", "ejs"); // This tells the Express app to use EJS as its t
 app.use(bodyParser.urlencoded({extended: true}));
 
 function generateRandomString() {
-
+    let result = [];
+    let n = 6;
+    for(let i = 0; i < n; i++) {
+      let ranNum = Math.ceil(Math.random() * 25);     
+      result.push(String.fromCharCode(65+ranNum));    
+    }
+    return result.join('');
 }
 
 
@@ -34,6 +40,7 @@ app.get("/urls/:shortURL", (req, res) => {      // : means shortURL is a variabl
   res.render("urls_show", templateVars); // the way to pass the variable to ejs file. 
 });
 
+
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
@@ -42,12 +49,20 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+
+
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  temp = generateRandomString();
+  urlDatabase.temp = req.body.longURL;
+  // res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  res.redirect(req.body.longURL);
 });
 
-
+app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL];
+  res.redirect(longURL);
+});
 
 
 app.listen(PORT, () => {
