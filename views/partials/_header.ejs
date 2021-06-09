@@ -12,3 +12,17 @@
     </div>
   </nav>
 </header>
+
+
+<% if (username) { %>
+  <p>Logged In As: <%=username %> !</p> 
+  <form method="POST" action="/logout">
+    <button type="submit">Logout</button>
+  </form>
+    <% } else { %>
+  <form method="POST" action="/login">
+    <input name='username'>
+    <button type="submit">Login</button>
+  </form>
+<% } %>
+
