@@ -2,19 +2,21 @@ const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser')
 const express = require("express");
 const { v4: uuidv4 } = require('uuid');
-const app = express();
-const PORT = 8080; // default port 8080
+const bcrypt = require('bcrypt');
 
-app.set("view engine", "ejs"); // Express app, EJS as templating engine. 
+const PORT = 8080;                     // default port 8080
+
+const app = express();
+app.set("view engine", "ejs");         // Express app, EJS as templating engine. 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser())
 
 const generateId = () => {
-  return uuidv4().split('-')[1];
+  return uuidv4().split('-')[1];       // 4 digits 
 };
 
 const generateShortURL = () => {
-  return uuidv4().split('-')[0];
+  return uuidv4().split('-')[0];       // 6 digits
 };
 
 const urlsForUser = (id) => {
@@ -37,18 +39,18 @@ const userDatabase = {
   test: {
     id: 'test',
     email: 'test@gmail.com',
-    password: '1234'
+    password: '$2b$10$0SCB.oPikTAGVp2uMdQLAuHmfUNFuQQI./bJRnYCCAPHLzt7FMi/e'
   },
 };
 
 
 // Get home page, localhost/urls
 app.get("/urls", (req, res) => {
-  console.log(req.cookies, userDatabase, urlDatabase)
+  // console.log(req.cookies, userDatabase, urlDatabase)
   if (req.cookies["userID"]) {
     const id = req.cookies["userID"].id;
     const urlOfId = urlsForUser(id)
-    console.log(id, urlOfId);
+    // console.log(id, urlOfId);
     const templateVars = { 
       urls: urlOfId,
       userID: req.cookies["userID"]
@@ -130,15 +132,24 @@ app.post('/login', (req, res) => {
   let userID = ''
 
   for (let user in userDatabase) {
-    if (userDatabase[user].email === email && userDatabase[user].password === password) {
+    if (userDatabase[user].email === email) {
       userID = user;
     } else {
-      return res.status(400).send('Please enter the right email or password')
+      return res.status(400).send('The email address doesn\'t exist')
     }
   }
 
-  res.cookie('userID', userDatabase[userID])
-  res.redirect('/urls')
+  bcrypt.compare(password, userDatabase[userID].password, (err, result) => {
+    if (result) {
+      // set the cookie and redirect to the protected page
+      res.cookie('userID', userDatabase[userID]);
+      // req.session.userId = foundUser.id;
+      console.log(1, userDatabase);
+      res.redirect('/urls');
+    } else {
+      return res.status(401).send('password is not correct');
+    }
+  });
 })
 
 // Post logout
@@ -151,9 +162,9 @@ app.post('/logout', (req, res) => {
 // Post Register 
 app.post('/register', (req, res) => {
   const email = req.body.email;
-  const password = req.body.password;
   const userID = generateId()
-
+  const password = req.body.password;
+  
   if (!email || !password){
     return res.status(404).send('Please enter userID or password')
   }
@@ -164,14 +175,19 @@ app.post('/register', (req, res) => {
     } 
   }
 
-  userDatabase[userID] = {
-    id: userID,
-    email,
-    password
-  }
-
-  res.cookie('userID', userDatabase[userID]);
-  res.redirect('/urls');
+  bcrypt.genSalt(10, (err, salt) => {               // generate a salt value based on saltrounds 10. 
+    bcrypt.hash(password, salt, (err, hash) => {    // generate a hash value 
+      userDatabase[userID] = {
+        id: userID,
+        email,
+        password: hash
+      }
+      
+      console.log(2, userDatabase)
+      res.cookie('userID', userDatabase[userID]);
+      res.redirect('/urls');
+    })
+  })
 })
 
 
