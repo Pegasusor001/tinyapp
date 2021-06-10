@@ -13,8 +13,8 @@
 
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
-        <% if (userId) { %>
-          <p>Logged In As: <%=userId %> !</p> 
+        <% if (userID) { %>
+          <p>Logged In As: <%=userID.email %></p> 
           <form method="POST" action="/logout">
             <button type="submit">Logout</button>
           </form>

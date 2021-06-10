@@ -1,4 +1,3 @@
-const { v4: uuidv4 } = require('uuid');
-const userId = uuidv4().split('-')[1];
+const a = {x:1}; 
 
-console.log(typeof userId);
+console.log(a.y)
