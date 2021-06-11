@@ -9,7 +9,7 @@ const PORT = 8080;                     // default port 8080
 
 const app = express();
 app.set("view engine", "ejs");         // Express app, EJS as templating engine. 
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(urlencoded({extended: true}));
 app.use(cookieSession({                // app.use(cookieParser())
   name: 'userID',
   keys: ['key1', 'key2']
