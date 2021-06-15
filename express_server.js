@@ -1,5 +1,5 @@
 const bodyParser = require("body-parser");
-const cookieSession = require('cookie-session');    // const cookieParser = require('cookie-parser')
+const cookieSession = require('cookie-session');
 const express = require("express");
 const bcrypt = require('bcrypt');
 const { getUserByEmail, generateId, generateShortURL, urlsForUser } = require('./helpers');
@@ -8,7 +8,7 @@ const PORT = 8080;                     // default port 8080
 const app = express();
 app.set("view engine", "ejs");         // Express app, EJS as templating engine.
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieSession({                // app.use(cookieParser()
+app.use(cookieSession({                // app.use(cookieParser() is replaced by sookieSession for encryption. 
   name: 'userID',
   keys: ['key1', 'key2']
 }));
@@ -35,9 +35,8 @@ app.get('/', (req,res) => {
   }
 });
 
-// Get home page, localhost/urls
+//home page, localhost/urls
 app.get("/urls", (req, res) => {
-  // console.log(userDatabase);
   if (req.session["userID"]) {
     const id = req.session["userID"].id;
     const urlOfId = urlsForUser(id, urlDatabase);
@@ -47,13 +46,11 @@ app.get("/urls", (req, res) => {
     };
     res.render("urls", templateVars);
   } else {
-    // res.render("urls_home", {userID: undefined});
     res.send('Please login first');
   }
 });
 
-// Get posting new link page, localhost/urls/news, used to post new urls.
-// login to view
+// create new page
 app.get("/urls/new", (req, res) => {
   const templateVars = {
     userID: req.session["userID"]
@@ -65,7 +62,7 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
-// Get Register Page
+// register page
 app.get('/urls/register', (req, res) => {
   const templateVars = {
     userID: req.session["userID"]
@@ -78,7 +75,7 @@ app.get('/urls/register', (req, res) => {
   }
 });
 
-// Get Login Page
+//login page
 app.get('/urls/login', (req, res) => {
   const templateVars = {
     userID: req.session["userID"]
@@ -92,7 +89,6 @@ app.get('/urls/login', (req, res) => {
 
 });
 
-// Get show page, urls_show, when receive request to different short url
 app.get("/urls/:shortURL", (req, res) => {
   if (!req.session["userID"]) {
     return res.send('Please login first');
@@ -112,8 +108,6 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-
-// Post new url request
 app.post("/urls", (req, res) => {
   const urlToPost = req.body.longURL;
   const shortURL = generateShortURL();
@@ -123,16 +117,12 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-// delete urls
 app.post('/urls/:url/delete', (req, res) => {
   const urlToDelte = req.params.url;
   delete urlDatabase[urlToDelte];
   res.redirect('/urls');
 });
 
-
-
-// Post login
 app.post('/urls/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -159,15 +149,11 @@ app.post('/urls/login', (req, res) => {
   });
 });
 
-// Post logout
 app.post('/urls/logout', (req, res) => {
-  // res.clearCookie('userID')
   req.session = null;
   res.redirect('/urls');
 });
 
-
-// Post Register
 app.post('/urls/register', (req, res) => {
   const email = req.body.email;
   const userID = generateId();
@@ -190,7 +176,6 @@ app.post('/urls/register', (req, res) => {
         email,
         password: hash
       };
-      // res.cookie('userID', userDatabase[userID]);
       req.session.userID = userDatabase[userID];
       res.redirect('/urls');
     });
@@ -204,7 +189,6 @@ app.post('/urls/:url', (req, res) => {
   res.redirect('/urls');
 });
 
-// get the json file at /urls.json
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
