@@ -37,6 +37,7 @@ app.get('/', (req,res) => {
 
 // Get home page, localhost/urls
 app.get("/urls", (req, res) => {
+  // console.log(userDatabase);
   if (req.session["userID"]) {
     const id = req.session["userID"].id;
     const urlOfId = urlsForUser(id, urlDatabase);
@@ -46,7 +47,8 @@ app.get("/urls", (req, res) => {
     };
     res.render("urls", templateVars);
   } else {
-    res.render("urls_home", {userID: undefined});
+    // res.render("urls_home", {userID: undefined});
+    res.send('Please login first');
   }
 });
 
@@ -101,11 +103,12 @@ app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
 
   if (!urlOfId[shortURL]) {
-    return res.send('Please add this website to your account firest');
+    return res.send('Please add this website to your account first');
   }
 
   const longURL = urlOfId[shortURL];
-  const templateVars = { shortURL, longURL};
+  const userID = req.session["userID"];
+  const templateVars = { userID, shortURL, longURL};
   res.render("urls_show", templateVars);
 });
 
@@ -127,15 +130,10 @@ app.post('/urls/:url/delete', (req, res) => {
   res.redirect('/urls');
 });
 
-// Edit urls
-app.post('/urls/:url', (req, res) => {
-  const urlToEdit = req.params.url;
-  urlDatabase[urlToEdit].longURL = req.body.longURL;
-  res.redirect('/urls');
-});
+
 
 // Post login
-app.post('/login', (req, res) => {
+app.post('/urls/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   let userID = '';
@@ -143,15 +141,17 @@ app.post('/login', (req, res) => {
   for (let user in userDatabase) {
     if (userDatabase[user].email === email) {
       userID = user;
-    } else {
-      return res.status(400).send('The email address doesn\'t exist');
-    }
+      break;
+    } 
   }
 
+  if (!userID) {
+    return res.status(400).send('The email address doesn\'t exist');
+  }
+  
   bcrypt.compare(password, userDatabase[userID].password, (err, result) => {
     if (result) {
       req.session.userID = userDatabase[userID];
-      console.log(getUserByEmail(email, userDatabase));
       res.redirect('/urls');
     } else {
       return res.status(401).send('password is not correct');
@@ -160,7 +160,7 @@ app.post('/login', (req, res) => {
 });
 
 // Post logout
-app.post('/logout', (req, res) => {
+app.post('/urls/logout', (req, res) => {
   // res.clearCookie('userID')
   req.session = null;
   res.redirect('/urls');
@@ -168,7 +168,7 @@ app.post('/logout', (req, res) => {
 
 
 // Post Register
-app.post('/register', (req, res) => {
+app.post('/urls/register', (req, res) => {
   const email = req.body.email;
   const userID = generateId();
   const password = req.body.password;
@@ -190,8 +190,6 @@ app.post('/register', (req, res) => {
         email,
         password: hash
       };
-      
-      console.log(getUserByEmail(email, userDatabase));
       // res.cookie('userID', userDatabase[userID]);
       req.session.userID = userDatabase[userID];
       res.redirect('/urls');
@@ -199,6 +197,12 @@ app.post('/register', (req, res) => {
   });
 });
 
+// Edit urls
+app.post('/urls/:url', (req, res) => {
+  const urlToEdit = req.params.url;
+  urlDatabase[urlToEdit].longURL = req.body.longURL;
+  res.redirect('/urls');
+});
 
 // get the json file at /urls.json
 app.get("/urls.json", (req, res) => {
