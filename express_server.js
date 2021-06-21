@@ -4,7 +4,7 @@ const express = require("express");
 const bcrypt = require('bcrypt');
 const { getUserByEmail, generateId, generateShortURL, urlsForUser } = require('./helpers');
 
-const PORT = 8080;                     // default port 8080
+const PORT = 8000;                     // default port 8080
 const app = express();
 app.set("view engine", "ejs");         // Express app, EJS as templating engine.
 app.use(bodyParser.urlencoded({extended: true}));
@@ -29,9 +29,9 @@ const userDatabase = {
 
 app.get('/', (req,res) => {
   if (req.session["userID"]) {
-    res.redirect("/urls");
+    res.redirect(302, "/urls");
   } else {
-    res.redirect("urls/login");
+    res.redirect("/login");
   }
 });
 
@@ -46,7 +46,7 @@ app.get("/urls", (req, res) => {
     };
     res.render("urls", templateVars);
   } else {
-    res.send('Please login first');
+    res.status(404).send('Please login first');
   }
 });
 
@@ -58,31 +58,31 @@ app.get("/urls/new", (req, res) => {
   if (req.session["userID"]) {
     res.render("urls_new", templateVars);
   } else {
-    res.redirect('urls/login');
+    res.redirect('/login');
   }
 });
 
 // register page
-app.get('/urls/register', (req, res) => {
+app.get('/register', (req, res) => {
   const templateVars = {
     userID: req.session["userID"]
   };
 
   if (req.session["userID"]) {
-    res.redirect('/urls');
+    res.redirect(302, '/urls');
   } else {
     res.render('urls_register', templateVars);
   }
 });
 
 //login page
-app.get('/urls/login', (req, res) => {
+app.get('/login', (req, res) => {
   const templateVars = {
     userID: req.session["userID"]
   };
 
   if (req.session["userID"]) {
-    res.redirect('/urls');
+    res.redirect(302, '/urls');
   } else {
     res.render('urls_login', templateVars);
   }
@@ -91,7 +91,7 @@ app.get('/urls/login', (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   if (!req.session["userID"]) {
-    return res.send('Please login first');
+    return res.status(404).send('Please login first');
   }
   
   const id = req.session["userID"].id;
@@ -99,7 +99,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
 
   if (!urlOfId[shortURL]) {
-    return res.send('Please add this website to your account first');
+    return res.status(404).send('URL does not exist, Please add this website to your account first');
   }
 
   const longURL = urlOfId[shortURL];
@@ -113,17 +113,33 @@ app.post("/urls", (req, res) => {
   const shortURL = generateShortURL();
   const userID = req.session["userID"];
 
+  if (!req.session["userID"]) {
+    return res.status(404).send('Please login first');
+  }
+
   urlDatabase[shortURL] = {longURL: urlToPost, userID: userID.id};
   res.redirect(`/urls/${shortURL}`);
 });
 
 app.post('/urls/:url/delete', (req, res) => {
+  if (!req.session["userID"]) {
+    return res.status(404).send('Please login first');
+  }
+  
+  const id = req.session["userID"].id;
+  const urlOfId = urlsForUser(id, urlDatabase);
+  const shortURL = req.params.url;
+
+  if (!urlOfId[shortURL]) {
+    return res.status(404).send('You don\'t have permission to delete it');
+  }
+
   const urlToDelte = req.params.url;
   delete urlDatabase[urlToDelte];
   res.redirect('/urls');
 });
 
-app.post('/urls/login', (req, res) => {
+app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   let userID = '';
@@ -142,19 +158,19 @@ app.post('/urls/login', (req, res) => {
   bcrypt.compare(password, userDatabase[userID].password, (err, result) => {
     if (result) {
       req.session.userID = userDatabase[userID];
-      res.redirect('/urls');
+      res.redirect(302, '/urls');
     } else {
-      return res.status(401).send('password is not correct');
+      return res.status(401).send('password is incorrect');
     }
   });
 });
 
-app.post('/urls/logout', (req, res) => {
+app.post('/logout', (req, res) => {
   req.session = null;
-  res.redirect('/urls');
+  res.redirect(302, '/login');
 });
 
-app.post('/urls/register', (req, res) => {
+app.post('/register', (req, res) => {
   const email = req.body.email;
   const userID = generateId();
   const password = req.body.password;
@@ -184,6 +200,10 @@ app.post('/urls/register', (req, res) => {
 
 // Edit urls
 app.post('/urls/:url', (req, res) => {
+  if (!req.session["userID"]) {
+    return res.status(404).send('Please login first');
+  }
+  
   const urlToEdit = req.params.url;
   urlDatabase[urlToEdit].longURL = req.body.longURL;
   res.redirect('/urls');
